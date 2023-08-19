@@ -102,7 +102,7 @@ async def del_hospital(message: types.Message, state: FSMContext):
     # user_id = message.from_user.id
     # bot_logger.info(f"User: {user_id}, Action: rm_command, State: {last_state}")
     await state.set_state(HospitalDeleter.title)
-    await message.reply("Введите название больницы")
+    await message.reply("Введите название больницы", reply_markup=keyboard.cancel_kb)
 
 @dp.message(StateFilter(HospitalDeleter.title))
 async def process_delete_hospital(message: types.Message, state: FSMContext):
