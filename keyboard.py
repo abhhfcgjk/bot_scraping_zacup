@@ -25,7 +25,7 @@ kb_arr1 = [
 ]
 greet_kb = ReplyKeyboardMarkup(keyboard=kb_arr1)
 
-buttonCancel = KeyboardButton(text="Отмена")
+buttonCancel = KeyboardButton(text="cancel")
 kb_arr2 = [
     [
         buttonCancel

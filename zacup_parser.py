@@ -57,6 +57,8 @@ def create_file()->None:
             lots = soup.find_all("div", class_="search-registry-entry-block box-shadow-search-input") # Находим все карточки с лотами
 
             if(len(lots) == 0): # Если Страница пустая, то выходим из цикла для больницы
+                if(page_number==1):
+                    logger.warning("NO DATA")
                 break
             for lot in lots:
                 # print(lot)

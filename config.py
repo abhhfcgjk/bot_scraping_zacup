@@ -14,14 +14,7 @@ headers = {
 
 }
 
-import json
+DSN = "https://193ca85583edbe786beb78b3baca992f@o4505727864012800.ingest.sentry.io/4505727869583360"
 
-def init_json_file():
-    print("JSON init")
-    data = {
-        "hospitals":[]
-    }
-    with open(args_file, "w") as file:
-        json.dump(data,file)
 
 #https://surik00.gitbooks.io/aiogram-lessons/content/
