@@ -14,6 +14,8 @@ button1 = KeyboardButton(text="Добавить больницу")
 button2 = KeyboardButton(text="Удалить больницу")
 button3 = KeyboardButton(text="Получить файл с урожаем")
 button4 = KeyboardButton(text="Список больниц")
+button5 = KeyboardButton(text="Изменить ключевые слова")
+button6 = KeyboardButton(text="Изменить ИНН больницы")
 
 kb_arr1 = [
     [
@@ -21,6 +23,9 @@ kb_arr1 = [
     ],
     [
         button3, button4
+    ],
+    [
+        button5, button6
     ]
 ]
 greet_kb = ReplyKeyboardMarkup(keyboard=kb_arr1)
