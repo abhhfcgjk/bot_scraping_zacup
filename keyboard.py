@@ -12,7 +12,7 @@ from aiogram.types import (
 
 button1 = KeyboardButton(text="Добавить больницу")
 button2 = KeyboardButton(text="Удалить больницу")
-button3 = KeyboardButton(text="Получить файл с урожаем")
+button3 = KeyboardButton(text="Получить файл")
 button4 = KeyboardButton(text="Список больниц")
 button5 = KeyboardButton(text="Изменить ключевые слова")
 button6 = KeyboardButton(text="Изменить ИНН больницы")

@@ -1,4 +1,5 @@
 # необходимо добавить перебор по названиям больниц
+from tqdm import tqdm
 
 from bs4 import BeautifulSoup
 import requests
@@ -22,6 +23,8 @@ logger.addHandler(handler)
 import config
 
 def find_word(text, words) -> bool:
+    if(text is None):
+        return False
     ans = False
     for word in words:
         ans = (text.find(word) != -1)
@@ -29,6 +32,22 @@ def find_word(text, words) -> bool:
             break
     return ans
 
+def get_next_page_number(soup) -> int:
+    arrow = soup.find("a", class_="paginator-button paginator-button-next")
+    if(arrow is None):
+        return 0
+    return int(arrow["data-pagenumber"])
+
+def write_data_to_xlsxfile(col_inn:list, col_id:list, col_text:list, col_price:list, col_url:list):
+    df = pd.DataFrame({
+        "ИНН": col_inn,
+        "Номер лота": col_id,
+        "Лот": col_text,
+        "Цена": col_price,
+        "URL": col_url,
+    })
+
+    df.to_excel("./ex.xlsx", index=False)
 
 
 def create_file()->None:
@@ -37,17 +56,22 @@ def create_file()->None:
         templates = json.load(file)
 
     for hosp in templates["hospitals"]: # Перебираем все бальницы
-        hospital = hosp[list(hosp.keys())[0]] # Имя больницы
-        page_number = 0 # определяем переменную для пагинации
-        while(True):
-            page_number += 1 # Переходим по странице
+        hosp_title = list(hosp.keys())[0]
+        hospital = hosp[hosp_title] # Имя больницы
+        page_number = 1 # определяем переменную для пагинации
+
+        pbar = tqdm(total=100, desc=hosp_title, unit="page")
+
+        while(page_number!=0):
+            pbar.update(1)
+
             page_url = f"&pageNumber={page_number}"
 
             inn = hospital["inn"]
             key_words = hospital["keys_words"]
 
-            URL = f"{config.URL_MAIN}/epz/order/extendedsearch/results.html?searchString={inn}&af=on"
-            URL += page_url # Генерируем URL для заданной странице
+            URL = f"{config.URL_MAIN}/epz/order/extendedsearch/results.html?searchString={inn}&ca=on&pc=on&pa=on{page_url}"
+            # URL = f"{config.URL_MAIN}/epz/order/extendedsearch/results.html?searchString={inn}&af=on{page_url}"
 
             web_request = requests.get(URL, headers=config.headers) # Getting a page by URL
             src =  web_request.text
@@ -62,7 +86,10 @@ def create_file()->None:
                 break
             for lot in lots:
                 # print(lot)
-                text = lot.find("div", class_="registry-entry__body-value").string.lower() # Название лота
+                text = lot.find("div", class_="registry-entry__body-value") # Название лота
+                if(text is not None):
+                    text = text.string.lower()
+
                 if(find_word(text, key_words)):
                     col_text.append(text)
                     price = lot.find("div", class_="price-block__value").string.strip() # Цена лота
@@ -73,13 +100,7 @@ def create_file()->None:
                     col_url.append(lot_url)
                     col_inn.append(inn)
                     logger.info(f"INN: {inn.encode('UTF-8')}, PRICE: {price.encode('UTF-8')}, LOT: {lot_id.encode('UTF-8')}")
-    df = pd.DataFrame({
-        "ИНН": col_inn,
-        "Номер лота": col_id,
-        "Лот": col_text,
-        "Цена": col_price,
-        "URL": col_url,
-    })
-
-    df.to_excel("./ex.xlsx", index=False)
+            page_number = get_next_page_number(soup)
+        pbar.close()
+    write_data_to_xlsxfile(col_inn, col_id, col_text, col_price, col_url)
 
