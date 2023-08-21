@@ -236,7 +236,7 @@ async def process_get_file(message: types.Message):
     # user_id = message.from_user.id
     # bot_logger.info(f"User: {user_id}, Action: get_file, State: {None}")
     await message.answer("Делаю")
-    zp.create_file("")
+    zp.create_file()
     user_id = message.from_user.id
     fname = f"ex{date.today()}"
     uploaded_file = FSInputFile(EX_FILE, filename=fname)
