@@ -103,3 +103,6 @@ def create_file()->None:
             page_number = get_next_page_number(soup)
         pbar.close()
     write_data_to_xlsxfile(col_inn, col_id, col_text, col_price, col_url)
+<<<<<<< HEAD
+=======
+>>>>>>> pagination_by_arrow
