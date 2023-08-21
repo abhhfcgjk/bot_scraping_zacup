@@ -8,7 +8,7 @@ from aiogram.types import Document
 from aiogram.types import FSInputFile
 import asyncio
 from datetime import date
-
+########## при добавлении ключевых слов в список убрать пустые строки из ключевых слов
 import logging
 import sentry_sdk
 
@@ -235,7 +235,8 @@ async def process_key_words(message: types.Message, state: FSMContext):
 async def process_get_file(message: types.Message):
     # user_id = message.from_user.id
     # bot_logger.info(f"User: {user_id}, Action: get_file, State: {None}")
-    zp.create_file()
+    await message.answer("Делаю")
+    zp.create_file("")
     user_id = message.from_user.id
     fname = f"ex{date.today()}"
     uploaded_file = FSInputFile(EX_FILE, filename=fname)
