@@ -2,20 +2,22 @@ from aiogram.types import (
 
     KeyboardButton,
 
-    Message,
-
     ReplyKeyboardMarkup,
 
     ReplyKeyboardRemove,
 
+    InlineKeyboardButton
+
 )
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 button1 = KeyboardButton(text="Добавить больницу")
 button2 = KeyboardButton(text="Удалить больницу")
 button3 = KeyboardButton(text="Получить файл")
 button4 = KeyboardButton(text="Список больниц")
-button5 = KeyboardButton(text="Изменить ключевые слова")
+# button5 = KeyboardButton(text="Изменить ключевые слова")
 button6 = KeyboardButton(text="Изменить ИНН больницы")
+# button7 = KeyboardButton(text="Добавить ключевые слова")
 
 kb_arr1 = [
     [
@@ -25,7 +27,7 @@ kb_arr1 = [
         button3, button4
     ],
     [
-        button5, button6
+        button6
     ]
 ]
 greet_kb = ReplyKeyboardMarkup(keyboard=kb_arr1)
@@ -37,3 +39,13 @@ kb_arr2 = [
     ]
 ]
 cancel_kb = ReplyKeyboardMarkup(keyboard=kb_arr2)
+
+
+button_cur_zacup = InlineKeyboardButton(text="Определение Поставщика", callback_data="current_data")
+button_analize_zacup = InlineKeyboardButton(text="Завершенный Закупки", callback_data="analize_data")
+
+file_kb = InlineKeyboardBuilder()
+file_kb.row(button_cur_zacup, button_analize_zacup)
+
+
+

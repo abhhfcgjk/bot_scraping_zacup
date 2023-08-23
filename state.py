@@ -3,18 +3,22 @@ from aiogram.filters.state import State, StatesGroup
 
 
 class Hospital(StatesGroup):
-    title = State()
+    name = State()
     inn = State()
-    key_words = State()
+    # key_words = State()
 
 class HospitalDeleter(StatesGroup):
-    title = State()
+    name = State()
 
 class CorrectHospitalKeyWords(StatesGroup):
-    title = State()
+    name = State()
     key_words = State()
 
 class CorrectHospitalINN(StatesGroup):
-    title = State()
+    name = State()
     inn = State()
+
+class GetFile(StatesGroup):
+    status = State()
+    key_words = State()
 

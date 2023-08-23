@@ -3,6 +3,7 @@
 *.xlsx
 
 arg.json
+keywords.json
 
 config.py
 
