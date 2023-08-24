@@ -22,7 +22,8 @@ logger.addHandler(handler)
 
 import config
 
-def find_word(text, words) -> bool:
+
+def find_keyword(text, words) -> bool:
     if(text is None):
         return False
     ans = False
@@ -45,75 +46,109 @@ def check_inn_for_finded_lot(lot, inn: str)->bool:
     else:
         return True
 
-def write_data_to_xlsxfile(col_inn:list, col_id:list, col_text:list, col_price:list, col_url:list):
-    df = pd.DataFrame({
-        "ИНН": col_inn,
-        "Номер лота": col_id,
-        "Лот": col_text,
-        "Цена": col_price,
-        "URL": col_url,
-    })
+class MethodsInfoFromPage:
+    @staticmethod
+    def generate_URL(hosp, filter_: str, page_number: int):
+        page_url = f"&pageNumber={page_number}"
+        hosp_inn = hosp['inn']
+        if(filter_ == "analize_data"):
+            URL = f"{config.URL_MAIN}/epz/order/extendedsearch/results.html?searchString={hosp_inn}&ca=on&pc=on&pa=on{page_url}"
+        elif(filter_ == "current_data"):
+            URL = f"{config.URL_MAIN}/epz/order/extendedsearch/results.html?searchString={hosp_inn}&af=on{page_url}"            
+    
+    @staticmethod
+    def get_current_page_number(next_page_number: int)->int:
+        if next_page_number == 0:
+            return 0
+        else:
+            return next_page_number - 1
+    
+    
+    @staticmethod
+    def get_URL(hospital_inn: str, filter_: str, page_number: int)->str:
+        page_url = f"&pageNumber={page_number}"
+        URL = f"{config.URL_MAIN}/epz/order/extendedsearch/results.html?searchString={hospital_inn}{filter_}{page_url}"
+        return URL
 
-    df.to_excel("./ex.xlsx", index=False)
+
+class InfoFromSitePage(MethodsInfoFromPage):
+    def __init__(self, filter_, hospital_inn, page_number):
+        self.__URL = super().get_URL(hospital_inn, filter_, page_number)
+        web_request = requests.get(self.__URL, headers=config.headers) # Getting a page by URL
+        src =  web_request.text
+        self.__soup = BeautifulSoup(src, 'lxml') # Format a page to bs4 format
+        # self.__next_page = super().get_next_page_number(self.__soup)
+        # self.__current_page = super().get_current_page_number(self.__next_page)
+        self.__hospital_inn = hospital_inn
+        self.__filter = filter_
+        self.__lots = self.__soup.find_all("div", class_="search-registry-entry-block box-shadow-search-input")
+        self.__col_inn: list = []
+        self.__col_id: list = []
+        self.__col_text: list = []
+        self.__col_price: list = []
+        self.__col_url: list = []
 
 
-def create_file(filt: str, key_words: list)->None:
-    col_id, col_text, col_price, col_url, col_inn = [], [], [], [], [] # Задаем колонки для записи в таблицу
+    @property
+    def soup(self):
+        return self.__soup
+
+    @property
+    def lots(self):
+        return self.__lots
+
+    def write_data_cols(self, text, lot, hosp_inn):
+        self.__col_text.append(text)
+        price = lot.find("div", class_="price-block__value").string.strip() # Цена лота
+        self.__col_price.append(price)
+        lot_id = lot.find("div", class_="registry-entry__header-mid__number").a.string.strip() # Номер лота
+        self.__col_id.append(lot_id)
+        lot_url = config.URL_MAIN + lot.find("div", class_="registry-entry__header-mid__number").a["href"] # Ссылка на лот
+        self.__col_url.append(lot_url)
+        self.__col_inn.append(hosp_inn)
+        logger.info(f"INN: {hosp_inn.encode('UTF-8')}, PRICE: {price.encode('UTF-8')}, LOT: {lot_id.encode('UTF-8')}")
+
+    def write_data_to_xlsxfile(self):
+        df = pd.DataFrame({
+            "ИНН": self.__col_inn,
+            "Номер лота": self.__col_id,
+            "Лот": self.__col_text,
+            "Цена": self.__col_price,
+            "URL": self.__col_url,
+        })
+
+        df.to_excel("./ex.xlsx", index=False)
+
+
+
+def create_file(filter_: str, key_words: list)->None:
     with open(config.args_file) as file:
         templates = json.load(file)
 
-    for hosp in templates["hospitals"]: # Перебираем все бальницы
-        hosp_name = hosp['name']
-        page_number = 1 # определяем переменную для пагинации
+    for hospital in templates['hospitals']:
+        current_page = 1
         isNoInnOnPage = False
+        hospital_inn = hospital['inn']
 
-        pbar = tqdm(total=100, desc=hosp_name, unit="page")
-
-        while(page_number!=0):
+        pbar = tqdm(total=100, desc=hospital['name'], unit="page")
+        while(current_page != 0):
             pbar.update(1)
-
-            page_url = f"&pageNumber={page_number}"
-
-            hosp_inn = hosp["inn"]
-            if(filt == "analize_data"):
-                URL = f"{config.URL_MAIN}/epz/order/extendedsearch/results.html?searchString={hosp_inn}&ca=on&pc=on&pa=on{page_url}"
-            elif(filt == "current_data"):
-                URL = f"{config.URL_MAIN}/epz/order/extendedsearch/results.html?searchString={hosp_inn}&af=on{page_url}"
-            
-
-            web_request = requests.get(URL, headers=config.headers) # Getting a page by URL
-            src =  web_request.text
-
-            soup = BeautifulSoup(src, 'lxml') # Format a page to bs4 format
-
-            lots = soup.find_all("div", class_="search-registry-entry-block box-shadow-search-input") # Находим все карточки с лотами
-
-            if(len(lots) == 0): # Если Страница пустая, то выходим из цикла для больницы
-                if(page_number==1):
-                    logger.warning("NO DATA")
-                break
-            for lot in lots:
-                if check_inn_for_finded_lot(lot, hosp_inn) == False:
+            sp = InfoFromSitePage(filter_, hospital_inn, current_page)
+            for lot in sp.lots:
+                if not check_inn_for_finded_lot(lot, hospital_inn):
                     isNoInnOnPage = True
                     break
-
+                
                 text = lot.find("div", class_="registry-entry__body-value").string # Название лота
                 if(text is not None):
                     text = text.lower()
 
-                if(find_word(text, key_words)):
-                    col_text.append(text)
-                    price = lot.find("div", class_="price-block__value").string.strip() # Цена лота
-                    col_price.append(price)
-                    lot_id = lot.find("div", class_="registry-entry__header-mid__number").a.string.strip() # Номер лота
-                    col_id.append(lot_id)
-                    lot_url = config.URL_MAIN + lot.find("div", class_="registry-entry__header-mid__number").a["href"] # Ссылка на лот
-                    col_url.append(lot_url)
-                    col_inn.append(hosp_inn)
-                    logger.info(f"INN: {hosp_inn.encode('UTF-8')}, PRICE: {price.encode('UTF-8')}, LOT: {lot_id.encode('UTF-8')}")
+                if(find_keyword(text, key_words)):
+                    sp.write_data_cols(text, lot, hospital_inn)
             
-            if isNoInnOnPage:   # Если выводятся больница с неверным ИНН,
-                break           # то зовершаем парсинг для больницы
-            page_number = get_next_page_number(soup)
+            if isNoInnOnPage:
+                break
+            current_page = get_next_page_number(sp.soup)
         pbar.close()
-    write_data_to_xlsxfile(col_inn, col_id, col_text, col_price, col_url)
+    sp.write_data_to_xlsxfile()
+

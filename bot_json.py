@@ -27,7 +27,7 @@ def init_json_file():
 
 def correct_inn(name: str, inn: str)->bool:
     try:
-        file = open(config.args_file)
+        file = open(config.args_file, encoding='utf-8')
         data = json.load(file)
         data["hospitals"]
     except:
@@ -44,7 +44,7 @@ def correct_inn(name: str, inn: str)->bool:
 
 def del_hospital_json(name: str)->bool:
     try:
-        file = open(config.args_file)
+        file = open(config.args_file, encoding='utf-8')
         data = json.load(file)
         data["hospitals"]
     except:
@@ -55,7 +55,7 @@ def del_hospital_json(name: str)->bool:
         if(hosp['name']==name):
             data['hospitals'].remove(hosp)
             print(data)
-            with open(config.args_file, "w") as file:
+            with open(config.args_file, "w", encoding='utf-8') as file:
                 json.dump(data, file)
             return True
     return False
@@ -63,20 +63,20 @@ def del_hospital_json(name: str)->bool:
 
 def add_hospital(hosp)->None:
     try:
-        file = open(config.args_file)
+        file = open(config.args_file, 'r', encoding='utf-8')
         data = json.load(file)
         data["hospitals"].append(hosp)
     except:
         init_json_file()
         add_hospital(hosp)
         return
-    with open(config.args_file, "w") as file:
+    with open(config.args_file, "w", encoding='utf-8') as file:
         json.dump(data, file)
 
 
 def print_all_hospitals()->str:
     try:
-        file = open(config.args_file)
+        file = open(config.args_file, 'r', encoding='utf-8')
         data = json.load(file)
         data["hospitals"]
     except:

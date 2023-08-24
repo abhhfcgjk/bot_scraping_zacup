@@ -10,15 +10,11 @@ class Hospital(StatesGroup):
 class HospitalDeleter(StatesGroup):
     name = State()
 
-class CorrectHospitalKeyWords(StatesGroup):
-    name = State()
-    key_words = State()
-
 class CorrectHospitalINN(StatesGroup):
     name = State()
     inn = State()
 
 class GetFile(StatesGroup):
-    status = State()
+    filter_ = State()
     key_words = State()
 

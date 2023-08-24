@@ -41,8 +41,8 @@ kb_arr2 = [
 cancel_kb = ReplyKeyboardMarkup(keyboard=kb_arr2)
 
 
-button_cur_zacup = InlineKeyboardButton(text="Определение Поставщика", callback_data="current_data")
-button_analize_zacup = InlineKeyboardButton(text="Завершенный Закупки", callback_data="analize_data")
+button_cur_zacup = InlineKeyboardButton(text="Определение Поставщика", callback_data="&af=on")
+button_analize_zacup = InlineKeyboardButton(text="Завершенный Закупки", callback_data="&ca=on&pc=on&pa=on")
 
 file_kb = InlineKeyboardBuilder()
 file_kb.row(button_cur_zacup, button_analize_zacup)
