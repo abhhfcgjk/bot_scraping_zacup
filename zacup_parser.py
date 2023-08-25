@@ -24,13 +24,20 @@ import config
 
 
 def find_keyword(text, words) -> bool:
+    if '/all' in words:
+        return True
     if(text is None):
         return False
     ans = False
     for word in words:
-        ans = (text.find(word) != -1)
-        if(ans):
-            break
+        if(word[0]=='-'):
+            ans = (text.find(word[1:]) == -1)
+            if not ans:
+                return False
+        else:
+            ans = (text.find(word) != -1)
+            if(ans):
+                break
     return ans
 
 def get_next_page_number(soup) -> int:
@@ -39,12 +46,12 @@ def get_next_page_number(soup) -> int:
         return 0
     return int(arrow["data-pagenumber"])
 
-def check_inn_for_finded_lot(lot, inn: str)->bool:
-    lot_organization_inn = lot.find('div', class_='registry-entry__body-href').a['href'].split('=')[-1]
-    if(inn!=lot_organization_inn):
-        return False
-    else:
-        return True
+# def check_inn_for_finded_lot(lot, inn: str)->bool:
+#     lot_organization_inn = lot.find('div', class_='registry-entry__body-href').a['href'].split('=')[-1]
+#     if(inn!=lot_organization_inn):
+#         return False
+#     else:
+#         return True
 
 class MethodsInfoFromPage:
     @staticmethod
@@ -88,6 +95,9 @@ class InfoFromSitePage(MethodsInfoFromPage):
         self.__col_price: list = []
         self.__col_url: list = []
 
+    @property
+    def URL(self):
+        return self.__URL
 
     @property
     def soup(self):
@@ -97,24 +107,36 @@ class InfoFromSitePage(MethodsInfoFromPage):
     def lots(self):
         return self.__lots
 
-    def write_data_cols(self, text, lot, hosp_inn):
-        self.__col_text.append(text)
+    def write_data_cols(self, text, lot, hosp_inn, col_text, col_price, col_id, col_url, col_inn):
+        col_text.append(text)
         price = lot.find("div", class_="price-block__value").string.strip() # Цена лота
-        self.__col_price.append(price)
+        col_price.append(price)
         lot_id = lot.find("div", class_="registry-entry__header-mid__number").a.string.strip() # Номер лота
-        self.__col_id.append(lot_id)
+        col_id.append(lot_id)
         lot_url = config.URL_MAIN + lot.find("div", class_="registry-entry__header-mid__number").a["href"] # Ссылка на лот
-        self.__col_url.append(lot_url)
-        self.__col_inn.append(hosp_inn)
+        col_url.append(lot_url)
+        col_inn.append(hosp_inn)
+        # self.print_data(text, lot, hosp_inn)
         logger.info(f"INN: {hosp_inn.encode('UTF-8')}, PRICE: {price.encode('UTF-8')}, LOT: {lot_id.encode('UTF-8')}")
 
-    def write_data_to_xlsxfile(self):
+    def print_data(self, text, lot, hosp_inn):
+        print(hosp_inn, end='\n')
+        print(text, end='\n')
+        price = lot.find("div", class_="price-block__value").string.strip() # Цена лота
+        print(price, end='\n')
+        lot_id = lot.find("div", class_="registry-entry__header-mid__number").a.string.strip() # Номер лота
+        print(lot_id, end='\n')
+        lot_url = config.URL_MAIN + lot.find("div", class_="registry-entry__header-mid__number").a["href"] # Ссылка на лот
+        print(lot_url, end='\n')
+
+
+    def write_data_to_xlsxfile(self, col_text, col_price, col_id, col_url, col_inn):
         df = pd.DataFrame({
-            "ИНН": self.__col_inn,
-            "Номер лота": self.__col_id,
-            "Лот": self.__col_text,
-            "Цена": self.__col_price,
-            "URL": self.__col_url,
+            "ИНН": col_inn,
+            "Номер лота": col_id,
+            "Лот": col_text,
+            "Цена": col_price,
+            "URL": col_url,
         })
 
         df.to_excel("./ex.xlsx", index=False)
@@ -122,6 +144,7 @@ class InfoFromSitePage(MethodsInfoFromPage):
 
 
 def create_file(filter_: str, key_words: list)->None:
+    col_text, col_id, col_inn, col_url, col_price = [],[],[],[],[]
     with open(config.args_file) as file:
         templates = json.load(file)
 
@@ -131,24 +154,25 @@ def create_file(filter_: str, key_words: list)->None:
         hospital_inn = hospital['inn']
 
         pbar = tqdm(total=100, desc=hospital['name'], unit="page")
+
         while(current_page != 0):
             pbar.update(1)
             sp = InfoFromSitePage(filter_, hospital_inn, current_page)
             for lot in sp.lots:
-                if not check_inn_for_finded_lot(lot, hospital_inn):
-                    isNoInnOnPage = True
-                    break
+                # if not check_inn_for_finded_lot(lot, hospital_inn):
+                #     isNoInnOnPage = True
+                #     break
                 
                 text = lot.find("div", class_="registry-entry__body-value").string # Название лота
                 if(text is not None):
                     text = text.lower()
 
                 if(find_keyword(text, key_words)):
-                    sp.write_data_cols(text, lot, hospital_inn)
+                    sp.write_data_cols(text, lot, hospital_inn, col_text, col_price, col_id, col_url, col_inn)
             
             if isNoInnOnPage:
                 break
             current_page = get_next_page_number(sp.soup)
         pbar.close()
-    sp.write_data_to_xlsxfile()
+    sp.write_data_to_xlsxfile(col_text, col_price, col_id, col_url, col_inn)
 
